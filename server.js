@@ -11,7 +11,7 @@ dotenv.config();
 app.use(cors({
   origin: [
     "http://localhost:5173", // for local React frontend
-    "https://6848795c5bb6b30008b8a7a4--passwordmanager-app.netlify.app/" // (optional) replace with real frontend URL when deployed
+    "https://passwordmanager-app.netlify.app/" // (optional) replace with real frontend URL when deployed
   ],
   methods: ["GET", "POST", "DELETE"],
   credentials: true
