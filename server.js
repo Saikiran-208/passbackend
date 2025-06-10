@@ -2,20 +2,27 @@ const express = require("express");
 const app = express();
 const dotenv = require("dotenv");
 const { MongoClient } = require("mongodb");
-const bodyparser = require('body-parser')
-const cors = require('cors')
+const bodyparser = require("body-parser");
+const cors = require("cors");
+
+// Load environment variables
 dotenv.config();
-app.use(bodyparser.json())
 
+// Middleware
+app.use(cors());
+app.use(bodyparser.json());
 
-const port = 3000;
-app.use(cors())
+const port = process.env.PORT || 3000;
 
-const url = "mongodb://localhost:27017";
+// Use MONGO_URI from .env
+const url = process.env.MONGO_URI;
 const client = new MongoClient(url);
 
 // Database Name
 const dbName = "passop";
+
+// Connect to MongoDB
+client.connect();
 
 app.get("/", async (req, res) => {
   const db = client.db(dbName);
@@ -25,21 +32,21 @@ app.get("/", async (req, res) => {
 });
 
 app.post("/", async (req, res) => {
-  const password = req.body
+  const password = req.body;
   const db = client.db(dbName);
   const collection = db.collection("passwords");
-  const findResult = await collection.insertOne(password)
-  res.send({success:true,result: findResult });
+  const result = await collection.insertOne(password);
+  res.send({ success: true, result });
 });
 
 app.delete("/", async (req, res) => {
-  const password = req.body
+  const password = req.body;
   const db = client.db(dbName);
   const collection = db.collection("passwords");
-  const findResult = await collection.deleteOne(password)
-  res.send({success:true,result: findResult });
+  const result = await collection.deleteOne(password);
+  res.send({ success: true, result });
 });
 
 app.listen(port, () => {
-  console.log(`Example app listening on port http://localhost:${port}`);
+  console.log(`Server is running at http://localhost:${port}`);
 });
