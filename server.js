@@ -5,48 +5,76 @@ const { MongoClient } = require("mongodb");
 const bodyparser = require("body-parser");
 const cors = require("cors");
 
-// Load environment variables
 dotenv.config();
 
-// Middleware
-app.use(cors());
+// ✅ Proper CORS setup for local & deployed frontend
+app.use(cors({
+  origin: [
+    "http://localhost:5173", // for local React frontend
+    "https://passwordmanager-app.netlify.app/" // (optional) replace with real frontend URL when deployed
+  ],
+  methods: ["GET", "POST", "DELETE"],
+  credentials: true
+}));
+
 app.use(bodyparser.json());
 
 const port = process.env.PORT || 3000;
-
-// Use MONGO_URI from .env
 const url = process.env.MONGO_URI;
+
+if (!url) {
+  console.error("❌ MONGO_URI is missing in .env");
+  process.exit(1);
+}
+
 const client = new MongoClient(url);
+let db;
 
-// Database Name
-const dbName = "passop";
-
-// Connect to MongoDB
-client.connect();
+async function connectDB() {
+  try {
+    await client.connect();
+    db = client.db("passop");
+    console.log("✅ Connected to MongoDB");
+  } catch (err) {
+    console.error("❌ MongoDB connection error:", err.message);
+    process.exit(1);
+  }
+}
 
 app.get("/", async (req, res) => {
-  const db = client.db(dbName);
-  const collection = db.collection("passwords");
-  const findResult = await collection.find({}).toArray();
-  res.json(findResult);
+  try {
+    const collection = db.collection("passwords");
+    const findResult = await collection.find({}).toArray();
+    res.json(findResult);
+  } catch (err) {
+    res.status(500).json({ error: "GET failed", message: err.message });
+  }
 });
 
 app.post("/", async (req, res) => {
-  const password = req.body;
-  const db = client.db(dbName);
-  const collection = db.collection("passwords");
-  const result = await collection.insertOne(password);
-  res.send({ success: true, result });
+  try {
+    const password = req.body;
+    const collection = db.collection("passwords");
+    const result = await collection.insertOne(password);
+    res.send({ success: true, result });
+  } catch (err) {
+    res.status(500).json({ error: "POST failed", message: err.message });
+  }
 });
 
 app.delete("/", async (req, res) => {
-  const password = req.body;
-  const db = client.db(dbName);
-  const collection = db.collection("passwords");
-  const result = await collection.deleteOne(password);
-  res.send({ success: true, result });
+  try {
+    const password = req.body;
+    const collection = db.collection("passwords");
+    const result = await collection.deleteOne(password);
+    res.send({ success: true, result });
+  } catch (err) {
+    res.status(500).json({ error: "DELETE failed", message: err.message });
+  }
 });
 
-app.listen(port, () => {
-  console.log(`Server is running at http://localhost:${port}`);
+connectDB().then(() => {
+  app.listen(port, () => {
+    console.log(`🚀 Server running at http://localhost:${port}`);
+  });
 });
